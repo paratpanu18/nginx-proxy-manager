@@ -29,7 +29,7 @@ export function SiteHeader() {
 					<NavLink to="/">
 						<div className={styles.logo}>
 							<img
-								src="/images/logo-no-text.svg"
+								src="/images/logo-text-horizontal-grey.png"
 								width={40}
 								height={40}
 								className="navbar-brand-image"
