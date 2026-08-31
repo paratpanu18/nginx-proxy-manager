@@ -41,14 +41,23 @@ router
 						query: {
 							$ref: "common#/properties/query",
 						},
+						owner_user_id: {
+							$ref: "common#/properties/owner_user_id",
+						},
 					},
 				},
 				{
 					expand: typeof req.query.expand === "string" ? req.query.expand.split(",") : null,
 					query: typeof req.query.query === "string" ? req.query.query : null,
+					owner_user_id: typeof req.query.owner_user_id === "string" ? req.query.owner_user_id : null,
 				},
 			);
-			const rows = await internalCertificate.getAll(res.locals.access, data.expand, data.query);
+			const rows = await internalCertificate.getAll(
+				res.locals.access,
+				data.expand,
+				data.query,
+				data.owner_user_id,
+			);
 			res.status(200).send(rows);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);

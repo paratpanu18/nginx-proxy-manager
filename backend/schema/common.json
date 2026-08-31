@@ -54,6 +54,38 @@
 			"minimum": 1,
 			"example": 2
 		},
+		"owner_user_id": {
+			"description": "Owner User ID, or `me` for the current user",
+			"anyOf": [
+				{
+					"type": "null"
+				},
+				{
+					"type": "string",
+					"pattern": "^(me|[0-9]+)$",
+					"minLength": 1,
+					"maxLength": 20,
+					"example": "me"
+				}
+			]
+		},
+		"bulk_action": {
+			"description": "Bulk action to perform",
+			"type": "string",
+			"enum": ["enable", "disable", "delete"],
+			"example": "delete"
+		},
+		"bulk_ids": {
+			"description": "IDs of the objects to apply the action to",
+			"type": "array",
+			"minItems": 1,
+			"maxItems": 500,
+			"items": {
+				"type": "integer",
+				"minimum": 1
+			},
+			"example": [1, 2, 3]
+		},
 		"certificate_id": {
 			"description": "Certificate ID",
 			"anyOf": [

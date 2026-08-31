@@ -1,18 +1,29 @@
 import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
+import { Link } from "react-router-dom";
 import { deleteAccessList } from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
-import { useAccessLists } from "src/hooks";
+import { useAccessLists, useUser } from "src/hooks";
 import { T } from "src/locale";
 import { showAccessListModal, showDeleteConfirmModal, showHelpModal } from "src/modals";
-import { ACCESS_LISTS, MANAGE } from "src/modules/Permissions";
+import { ACCESS_LISTS, isAdmin, MANAGE, USER, VISIBILITY } from "src/modules/Permissions";
 import { showObjectSuccess } from "src/notifications";
 import Table from "./Table";
 
-export default function TableWrapper() {
+interface Props {
+	/** Render the "all objects" variant, showing access lists of every user */
+	all?: boolean;
+}
+
+export default function TableWrapper({ all }: Props) {
 	const [search, setSearch] = useState("");
-	const { isFetching, isLoading, isError, error, data } = useAccessLists(["owner", "items", "clients"]);
+	const { data: currentUser } = useUser("me");
+	const { isFetching, isLoading, isError, error, data } = useAccessLists(
+		["owner", "items", "clients"],
+		{},
+		{ ownerUserId: all ? undefined : "me" },
+	);
 
 	if (isLoading) {
 		return <LoadingPage />;
@@ -21,6 +32,10 @@ export default function TableWrapper() {
 	if (isError) {
 		return <Alert variant="danger">{error?.message || "Unknown error"}</Alert>;
 	}
+
+	// Only users that are allowed to see everything (admins or visibility=all)
+	// can switch between their own items and all items
+	const canViewAll = isAdmin(currentUser?.roles) || currentUser?.permissions?.[VISIBILITY] === USER;
 
 	const handleDelete = async (id: number) => {
 		await deleteAccessList(id);
@@ -45,7 +60,10 @@ export default function TableWrapper() {
 					<div className="row w-full">
 						<div className="col">
 							<h2 className="mt-1 mb-0">
-								<T id="access-lists" />
+								<T
+									id={all ? "view.all-objects" : "view.mine-objects"}
+									tData={{ object: "access-lists" }}
+								/>
 							</h2>
 						</div>
 
@@ -68,6 +86,14 @@ export default function TableWrapper() {
 								<Button size="sm" onClick={() => showHelpModal("AccessLists", "cyan")}>
 									<IconHelp size={20} />
 								</Button>
+								{canViewAll ? (
+									<Link to={all ? "/access" : "/access/all"} className="btn btn-sm btn-outline-cyan">
+										<T
+											id={all ? "view.mine-objects" : "view.all-objects"}
+											tData={{ object: "access-lists" }}
+										/>
+									</Link>
+								) : null}
 								<HasPermission section={ACCESS_LISTS} permission={MANAGE} hideError>
 									{data?.length ? (
 										<Button

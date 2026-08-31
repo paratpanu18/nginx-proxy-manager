@@ -1,9 +1,10 @@
 import { IconHelp, IconSearch } from "@tabler/icons-react";
 import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
+import { Link } from "react-router-dom";
 import { deleteCertificate, downloadCertificate } from "src/api/backend";
 import { Button, HasPermission, LoadingPage } from "src/components";
-import { useCertificates } from "src/hooks";
+import { useCertificates, useUser } from "src/hooks";
 import { T } from "src/locale";
 import {
 	showCustomCertificateModal,
@@ -13,19 +14,23 @@ import {
 	showHTTPCertificateModal,
 	showRenewCertificateModal,
 } from "src/modals";
-import { CERTIFICATES, MANAGE } from "src/modules/Permissions";
+import { CERTIFICATES, isAdmin, MANAGE, USER, VISIBILITY } from "src/modules/Permissions";
 import { showError, showObjectSuccess } from "src/notifications";
 import Table from "./Table";
 
-export default function TableWrapper() {
+interface Props {
+	/** Render the "all objects" variant, showing certificates of every user */
+	all?: boolean;
+}
+
+export default function TableWrapper({ all }: Props) {
 	const [search, setSearch] = useState("");
-	const { isFetching, isLoading, isError, error, data } = useCertificates([
-		"owner",
-		"dead_hosts",
-		"proxy_hosts",
-		"redirection_hosts",
-		"streams",
-	]);
+	const { data: currentUser } = useUser("me");
+	const { isFetching, isLoading, isError, error, data } = useCertificates(
+		["owner", "dead_hosts", "proxy_hosts", "redirection_hosts", "streams"],
+		{},
+		{ ownerUserId: all ? undefined : "me" },
+	);
 
 	if (isLoading) {
 		return <LoadingPage />;
@@ -34,6 +39,10 @@ export default function TableWrapper() {
 	if (isError) {
 		return <Alert variant="danger">{error?.message || "Unknown error"}</Alert>;
 	}
+
+	// Only users that are allowed to see everything (admins or visibility=all)
+	// can switch between their own items and all items
+	const canViewAll = isAdmin(currentUser?.roles) || currentUser?.permissions?.[VISIBILITY] === USER;
 
 	const handleDelete = async (id: number) => {
 		await deleteCertificate(id);
@@ -68,7 +77,10 @@ export default function TableWrapper() {
 					<div className="row w-full">
 						<div className="col">
 							<h2 className="mt-1 mb-0">
-								<T id="certificates" />
+								<T
+									id={all ? "view.all-objects" : "view.mine-objects"}
+									tData={{ object: "certificates" }}
+								/>
 							</h2>
 						</div>
 						<div className="col-md-auto col-sm-12">
@@ -90,6 +102,17 @@ export default function TableWrapper() {
 								<Button size="sm" onClick={() => showHelpModal("Certificates", "pink")}>
 									<IconHelp size={20} />
 								</Button>
+								{canViewAll ? (
+									<Link
+										to={all ? "/certificates" : "/certificates/all"}
+										className="btn btn-sm btn-outline-pink"
+									>
+										<T
+											id={all ? "view.mine-objects" : "view.all-objects"}
+											tData={{ object: "certificates" }}
+										/>
+									</Link>
+								) : null}
 								<HasPermission section={CERTIFICATES} permission={MANAGE} hideError>
 									{data?.length ? (
 										<div className="dropdown">

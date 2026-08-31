@@ -1,7 +1,9 @@
 {
 	"operationId": "getAccessLists",
 	"summary": "Get all access lists",
-	"tags": ["access-lists"],
+	"tags": [
+		"access-lists"
+	],
 	"security": [
 		{
 			"bearerAuth": [
@@ -22,6 +24,16 @@
 					"clients",
 					"proxy_hosts"
 				]
+			}
+		},
+		{
+			"in": "query",
+			"name": "owner_user_id",
+			"description": "Filter by owner user ID, or `me` for the current user",
+			"schema": {
+				"type": "string",
+				"pattern": "^(me|[0-9]+)$",
+				"example": "me"
 			}
 		}
 	],

@@ -1,9 +1,18 @@
 import { IconDotsVertical, IconEdit, IconPower, IconTrash } from "@tabler/icons-react";
-import { createColumnHelper, type SortingState, useTable } from "@tanstack/react-table";
+import {
+	createColumnHelper,
+	type OnChangeFn,
+	type RowSelectionState,
+	type SortingState,
+	useTable,
+} from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import type { Stream } from "src/api/backend";
 import {
+	type BulkAction,
+	BulkActionsBar,
 	CertificateFormatter,
+	createSelectColumn,
 	EmptyData,
 	GravatarFormatter,
 	HasPermission,
@@ -23,11 +32,29 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	/** When provided, enables row selection and the bulk actions bar */
+	onBulkAction?: (action: BulkAction, ids: number[]) => void;
+	rowSelection?: RowSelectionState;
+	onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+	isBulkBusy?: boolean;
 }
-export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, onDisableToggle, onNew }: Props) {
+export default function Table({
+	data,
+	isFetching,
+	isFiltered,
+	onEdit,
+	onDelete,
+	onDisableToggle,
+	onNew,
+	onBulkAction,
+	rowSelection,
+	onRowSelectionChange,
+	isBulkBusy,
+}: Props) {
 	const columnHelper = createColumnHelper<Features, Stream>();
 	const columns = useMemo(
 		() => [
+			...(onBulkAction ? [createSelectColumn<Stream>()] : []),
 			columnHelper.accessor((row: any) => row.owner, {
 				id: "owner",
 				enableSorting: false,
@@ -164,7 +191,7 @@ export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, 
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete],
+		[columnHelper, onEdit, onDisableToggle, onDelete, onBulkAction],
 	);
 
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -173,28 +200,47 @@ export default function Table({ data, isFetching, isFiltered, onEdit, onDelete, 
 		features,
 		columns,
 		data,
-		state: { sorting },
+		state: { sorting, rowSelection },
 		onSortingChange: setSorting,
+		onRowSelectionChange,
+		getRowId: (row) => String(row.id),
 		meta: {
 			isFetching,
 		},
 		enableSortingRemoval: false,
 	});
 
+	const selectedIds = rowSelection
+		? Object.keys(rowSelection)
+				.filter((key) => rowSelection[key])
+				.map(Number)
+		: [];
+
 	return (
-		<TableLayout
-			tableInstance={tableInstance}
-			emptyState={
-				<EmptyData
-					object="stream"
-					objects="streams"
-					tableInstance={tableInstance}
-					onNew={onNew}
-					isFiltered={isFiltered}
+		<>
+			{onBulkAction ? (
+				<BulkActionsBar
+					selectedCount={selectedIds.length}
 					color="blue"
-					permissionSection={STREAMS}
+					isBusy={isBulkBusy}
+					onAction={(action) => onBulkAction(action, selectedIds)}
+					onClear={() => onRowSelectionChange?.({})}
 				/>
-			}
-		/>
+			) : null}
+			<TableLayout
+				tableInstance={tableInstance}
+				emptyState={
+					<EmptyData
+						object="stream"
+						objects="streams"
+						tableInstance={tableInstance}
+						onNew={onNew}
+						isFiltered={isFiltered}
+						color="blue"
+						permissionSection={STREAMS}
+					/>
+				}
+			/>
+		</>
 	);
 }

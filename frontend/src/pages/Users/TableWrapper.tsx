@@ -2,6 +2,7 @@ import { IconSearch } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
+import { useNavigate } from "react-router-dom";
 import { deleteUser, toggleUser } from "src/api/backend";
 import { Button, LoadingPage } from "src/components";
 import { useAuthState } from "src/context";
@@ -13,6 +14,7 @@ import Table from "./Table";
 
 export default function TableWrapper() {
 	const queryClient = useQueryClient();
+	const navigate = useNavigate();
 	const { loginAs } = useAuthState();
 	const [search, setSearch] = useState("");
 	const { isFetching, isLoading, isError, error, data } = useUsers(["permissions"]);
@@ -116,6 +118,7 @@ export default function TableWrapper() {
 					onDisableToggle={handleDisableToggle}
 					onNewUser={() => showUserModal("new")}
 					onLoginAs={handleLoginAs}
+					onViewResources={(id: number) => navigate(`/users/${id}`)}
 				/>
 			</div>
 		</div>

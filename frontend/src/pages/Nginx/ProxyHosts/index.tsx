@@ -2,10 +2,15 @@ import { HasPermission } from "src/components";
 import { PROXY_HOSTS, VIEW } from "src/modules/Permissions";
 import TableWrapper from "./TableWrapper";
 
-const ProxyHosts = () => {
+interface Props {
+	/** Show hosts of every user, not only your own */
+	all?: boolean;
+}
+
+const ProxyHosts = ({ all }: Props) => {
 	return (
 		<HasPermission section={PROXY_HOSTS} permission={VIEW} pageLoading loadingNoLogo>
-			<TableWrapper />
+			<TableWrapper all={all} />
 		</HasPermission>
 	);
 };

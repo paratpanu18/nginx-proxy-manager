@@ -39,14 +39,23 @@ router
 						query: {
 							$ref: "common#/properties/query",
 						},
+						owner_user_id: {
+							$ref: "common#/properties/owner_user_id",
+						},
 					},
 				},
 				{
 					expand: typeof req.query.expand === "string" ? req.query.expand.split(",") : null,
 					query: typeof req.query.query === "string" ? req.query.query : null,
+					owner_user_id: typeof req.query.owner_user_id === "string" ? req.query.owner_user_id : null,
 				},
 			);
-			const rows = await internalStream.getAll(res.locals.access, data.expand, data.query);
+			const rows = await internalStream.getAll(
+				res.locals.access,
+				data.expand,
+				data.query,
+				data.owner_user_id,
+			);
 			res.status(200).send(rows);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
@@ -64,6 +73,34 @@ router
 			const payload = await apiValidator(getValidationSchema("/nginx/streams", "post"), req.body);
 			const result = await internalStream.create(res.locals.access, payload);
 			res.status(201).send(result);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
+			next(err);
+		}
+	});
+
+/**
+ * Bulk operations on streams
+ *
+ * /api/nginx/streams/bulk
+ */
+router
+	.route("/bulk")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode()) // preferred so it doesn't apply to nonexistent routes
+
+	/**
+	 * POST /api/nginx/streams/bulk
+	 *
+	 * Perform a bulk action on multiple streams
+	 */
+	.post(async (req, res, next) => {
+		try {
+			const payload = await apiValidator(getValidationSchema("/nginx/streams/bulk", "post"), req.body);
+			const result = await internalStream.bulk(res.locals.access, payload);
+			res.status(200).send(result);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);

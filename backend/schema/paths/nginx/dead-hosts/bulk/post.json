@@ -1,0 +1,73 @@
+{
+	"operationId": "bulkDeadHosts",
+	"summary": "Perform a bulk action on multiple 404 Hosts",
+	"tags": [
+		"dead-hosts"
+	],
+	"security": [
+		{
+			"bearerAuth": [
+				"dead_hosts.manage"
+			]
+		}
+	],
+	"requestBody": {
+		"description": "Bulk action payload",
+		"required": true,
+		"content": {
+			"application/json": {
+				"schema": {
+					"type": "object",
+					"additionalProperties": false,
+					"required": [
+						"action",
+						"ids"
+					],
+					"properties": {
+						"action": {
+							"$ref": "../../../../common.json#/properties/bulk_action"
+						},
+						"ids": {
+							"$ref": "../../../../common.json#/properties/bulk_ids"
+						}
+					}
+				},
+				"example": {
+					"action": "delete",
+					"ids": [
+						1,
+						2,
+						3
+					]
+				}
+			}
+		}
+	},
+	"responses": {
+		"200": {
+			"description": "200 response",
+			"content": {
+				"application/json": {
+					"examples": {
+						"default": {
+							"value": [
+								{
+									"id": 1,
+									"result": true
+								},
+								{
+									"id": 2,
+									"result": false,
+									"error": "Host is already disabled"
+								}
+							]
+						}
+					},
+					"schema": {
+						"$ref": "../../../../components/bulk-result.json"
+					}
+				}
+			}
+		}
+	}
+}

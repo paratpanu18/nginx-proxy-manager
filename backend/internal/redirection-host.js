@@ -415,9 +415,10 @@ const internalRedirectionHost = {
 	 * @param   {Access}  access
 	 * @param   {Array}   [expand]
 	 * @param   {String}  [search_query]
+	 * @param   {String}  [owner_user_id]  'me' or a numeric user id, to narrow results to a specific owner
 	 * @returns {Promise}
 	 */
-	getAll: (access, expand, search_query) => {
+	getAll: (access, expand, search_query, ownerUserIdParam) => {
 		return access
 			.can("redirection_hosts:list")
 			.then((access_data) => {
@@ -430,6 +431,12 @@ const internalRedirectionHost = {
 
 				if (access_data.permission_visibility !== "all") {
 					query.andWhere("owner_user_id", access.token.getUserId(1));
+				} else if (ownerUserIdParam) {
+					// Only narrow results for users that are allowed to see everything,
+					// as this is a subset of what they can already see
+					const ownerUserId =
+						ownerUserIdParam === "me" ? access.token.getUserId(1) : Number.parseInt(ownerUserIdParam, 10);
+					query.andWhere("owner_user_id", ownerUserId);
 				}
 
 				// Query is used for searching
@@ -452,6 +459,91 @@ const internalRedirectionHost = {
 
 				return rows;
 			});
+	},
+
+	/**
+	 * Perform a bulk action on multiple hosts
+	 *
+	 * @param   {Access}  access
+	 * @param   {Object}  data
+	 * @param   {String}  data.action  - 'enable', 'disable' or 'delete'
+	 * @param   {Array}   data.ids
+	 * @returns {Promise} - array of {id, result, error} objects
+	 */
+	bulk: async (access, data) => {
+		const results = [];
+		let reloadNeeded = false;
+
+		for (const id of data.ids) {
+			try {
+				if (data.action === "enable") {
+					// Reuses the per-item logic, which includes nginx configuration
+					await internalRedirectionHost.enable(access, { id });
+				} else if (data.action === "disable" || data.action === "delete") {
+					await access.can(
+						data.action === "delete" ? "redirection_hosts:delete" : "redirection_hosts:update",
+						id,
+					);
+
+					const row = await internalRedirectionHost.get(access, { id });
+					if (!row?.id) {
+						throw new errs.ItemNotFoundError(id);
+					}
+
+					if (data.action === "delete") {
+						await redirectionHostModel.query().where("id", row.id).patch({
+							is_deleted: 1,
+						});
+
+						// Delete Nginx Config
+						await internalNginx.deleteConfig("redirection_host", row);
+						reloadNeeded = true;
+
+						// Add to audit log
+						await internalAuditLog.add(access, {
+							action: "deleted",
+							object_type: "redirection-host",
+							object_id: row.id,
+							meta: _.omit(row, omissions()),
+						});
+					} else {
+						if (!row.enabled) {
+							throw new errs.ValidationError("Host is already disabled");
+						}
+
+						row.enabled = 0;
+
+						await redirectionHostModel.query().where("id", row.id).patch({
+							enabled: 0,
+						});
+
+						// Delete Nginx Config
+						await internalNginx.deleteConfig("redirection_host", row);
+						reloadNeeded = true;
+
+						// Add to audit log
+						await internalAuditLog.add(access, {
+							action: "disabled",
+							object_type: "redirection-host",
+							object_id: row.id,
+							meta: _.omit(row, omissions()),
+						});
+					}
+				} else {
+					throw new errs.ValidationError(`Unknown bulk action: ${data.action}`);
+				}
+
+				results.push({ id, result: true });
+			} catch (err) {
+				results.push({ id, result: false, error: err.message });
+			}
+		}
+
+		if (reloadNeeded) {
+			await internalNginx.reload();
+		}
+
+		return results;
 	},
 
 	/**

@@ -430,7 +430,16 @@ const internalCertificate = {
 	 * @param   {String}  [searchQuery]
 	 * @returns {Promise}
 	 */
-	getAll: async (access, expand, searchQuery) => {
+	/**
+	 * All certificates
+	 *
+	 * @param   {Access}  access
+	 * @param   {Array}   [expand]
+	 * @param   {String}  [searchQuery]
+	 * @param   {String}  [owner_user_id]  'me' or a numeric user id, to narrow results to a specific owner
+	 * @returns {Promise}
+	 */
+	getAll: async (access, expand, searchQuery, ownerUserIdParam) => {
 		const accessData = await access.can("certificates:list");
 
 		const query = certificateModel
@@ -442,6 +451,11 @@ const internalCertificate = {
 
 		if (accessData.permission_visibility !== "all") {
 			query.andWhere("owner_user_id", access.token.getUserId(1));
+		} else if (ownerUserIdParam) {
+			// Only narrow results for users that are allowed to see everything,
+			// as this is a subset of what they can already see
+			const ownerUserId = ownerUserIdParam === "me" ? access.token.getUserId(1) : Number.parseInt(ownerUserIdParam, 10);
+			query.andWhere("owner_user_id", ownerUserId);
 		}
 
 		// Query is used for searching

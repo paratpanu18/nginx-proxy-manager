@@ -308,7 +308,16 @@ const internalAccessList = {
 	 * @param   {String}  [searchQuery]
 	 * @returns {Promise}
 	 */
-	getAll: async (access, expand, searchQuery) => {
+	/**
+	 * All access lists
+	 *
+	 * @param   {Access}  access
+	 * @param   {Array}   [expand]
+	 * @param   {String}  [searchQuery]
+	 * @param   {String}  [owner_user_id]  'me' or a numeric user id, to narrow results to a specific owner
+	 * @returns {Promise}
+	 */
+	getAll: async (access, expand, searchQuery, ownerUserIdParam) => {
 		const accessData = await access.can("access_lists:list");
 
 		const query = accessListModel
@@ -324,6 +333,12 @@ const internalAccessList = {
 
 		if (accessData.permission_visibility !== "all") {
 			query.andWhere("access_list.owner_user_id", access.token.getUserId(1));
+		} else if (ownerUserIdParam) {
+			// Only narrow results for users that are allowed to see everything,
+			// as this is a subset of what they can already see
+			const ownerUserId =
+				ownerUserIdParam === "me" ? access.token.getUserId(1) : Number.parseInt(ownerUserIdParam, 10);
+			query.andWhere("access_list.owner_user_id", ownerUserId);
 		}
 
 		// Query is used for searching

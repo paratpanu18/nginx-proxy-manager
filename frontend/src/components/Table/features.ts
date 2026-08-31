@@ -2,6 +2,7 @@ import {
 	columnVisibilityFeature,
 	createSortedRowModel,
 	metaHelper,
+	rowSelectionFeature,
 	rowSortingFeature,
 	tableFeatures,
 } from "@tanstack/react-table";
@@ -21,11 +22,15 @@ interface TableMeta {
  * shared TableLayout/TableHeader/TableBody/EmptyData components, so every
  * table instance must register them even when a particular table doesn't
  * wire up controlled sorting state itself.
+ *
+ * Row selection is registered globally as well; tables that don't render the
+ * selection column simply never toggle it.
  */
 const features = tableFeatures({
 	rowSortingFeature,
 	sortedRowModel: createSortedRowModel(),
 	columnVisibilityFeature,
+	rowSelectionFeature,
 	columnMeta: metaHelper<ColumnMeta>(),
 	tableMeta: metaHelper<TableMeta>(),
 });

@@ -1,10 +1,19 @@
 import { IconDotsVertical, IconEdit, IconPower, IconTrash } from "@tabler/icons-react";
-import { createColumnHelper, type SortingState, useTable } from "@tanstack/react-table";
+import {
+	createColumnHelper,
+	type OnChangeFn,
+	type RowSelectionState,
+	type SortingState,
+	useTable,
+} from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import type { ProxyHost } from "src/api/backend";
 import {
 	AccessListFormatter,
+	type BulkAction,
+	BulkActionsBar,
 	CertificateFormatter,
+	createSelectColumn,
 	DomainsFormatter,
 	EmptyData,
 	GravatarFormatter,
@@ -24,11 +33,29 @@ interface Props {
 	onDelete?: (id: number) => void;
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNew?: () => void;
+	/** When provided, enables row selection and the bulk actions bar */
+	onBulkAction?: (action: BulkAction, ids: number[]) => void;
+	rowSelection?: RowSelectionState;
+	onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+	isBulkBusy?: boolean;
 }
-export default function Table({ data, isFetching, onEdit, onDelete, onDisableToggle, onNew, isFiltered }: Props) {
+export default function Table({
+	data,
+	isFetching,
+	onEdit,
+	onDelete,
+	onDisableToggle,
+	onNew,
+	isFiltered,
+	onBulkAction,
+	rowSelection,
+	onRowSelectionChange,
+	isBulkBusy,
+}: Props) {
 	const columnHelper = createColumnHelper<Features, ProxyHost>();
 	const columns = useMemo(
 		() => [
+			...(onBulkAction ? [createSelectColumn<ProxyHost>()] : []),
 			columnHelper.accessor((row: any) => row.owner, {
 				id: "owner",
 				enableSorting: false,
@@ -155,7 +182,7 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 				},
 			}),
 		],
-		[columnHelper, onEdit, onDisableToggle, onDelete],
+		[columnHelper, onEdit, onDisableToggle, onDelete, onBulkAction],
 	);
 
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -164,28 +191,47 @@ export default function Table({ data, isFetching, onEdit, onDelete, onDisableTog
 		features,
 		columns,
 		data,
-		state: { sorting },
+		state: { sorting, rowSelection },
 		onSortingChange: setSorting,
+		onRowSelectionChange,
+		getRowId: (row: ProxyHost) => String(row.id),
 		meta: {
 			isFetching,
 		},
 		enableSortingRemoval: false,
 	});
 
+	const selectedIds = rowSelection
+		? Object.keys(rowSelection)
+				.filter((key) => rowSelection[key])
+				.map(Number)
+		: [];
+
 	return (
-		<TableLayout
-			tableInstance={tableInstance}
-			emptyState={
-				<EmptyData
-					object="proxy-host"
-					objects="proxy-hosts"
-					tableInstance={tableInstance}
-					onNew={onNew}
-					isFiltered={isFiltered}
+		<>
+			{onBulkAction ? (
+				<BulkActionsBar
+					selectedCount={selectedIds.length}
 					color="lime"
-					permissionSection={PROXY_HOSTS}
+					isBusy={isBulkBusy}
+					onAction={(action) => onBulkAction(action, selectedIds)}
+					onClear={() => onRowSelectionChange?.({})}
 				/>
-			}
-		/>
+			) : null}
+			<TableLayout
+				tableInstance={tableInstance}
+				emptyState={
+					<EmptyData
+						object="proxy-host"
+						objects="proxy-hosts"
+						tableInstance={tableInstance}
+						onNew={onNew}
+						isFiltered={isFiltered}
+						color="lime"
+						permissionSection={PROXY_HOSTS}
+					/>
+				}
+			/>
+		</>
 	);
 }

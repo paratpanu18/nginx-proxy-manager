@@ -1,7 +1,9 @@
 {
 	"operationId": "getProxyHosts",
 	"summary": "Get all proxy hosts",
-	"tags": ["proxy-hosts"],
+	"tags": [
+		"proxy-hosts"
+	],
 	"security": [
 		{
 			"bearerAuth": [
@@ -21,6 +23,16 @@
 					"owner",
 					"certificate"
 				]
+			}
+		},
+		{
+			"in": "query",
+			"name": "owner_user_id",
+			"description": "Filter by owner user ID, or `me` for the current user",
+			"schema": {
+				"type": "string",
+				"pattern": "^(me|[0-9]+)$",
+				"example": "me"
 			}
 		}
 	],

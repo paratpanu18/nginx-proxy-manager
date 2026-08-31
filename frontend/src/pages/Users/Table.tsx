@@ -6,6 +6,7 @@ import {
 	IconPower,
 	IconShield,
 	IconTrash,
+	IconUser,
 } from "@tabler/icons-react";
 import { createColumnHelper, useTable } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -34,6 +35,7 @@ interface Props {
 	onDisableToggle?: (id: number, enabled: boolean) => void;
 	onNewUser?: () => void;
 	onLoginAs?: (id: number) => void;
+	onViewResources?: (id: number) => void;
 }
 export default function Table({
 	data,
@@ -47,6 +49,7 @@ export default function Table({
 	onDisableToggle,
 	onNewUser,
 	onLoginAs,
+	onViewResources,
 }: Props) {
 	const columnHelper = createColumnHelper<Features, User>();
 	const columns = useMemo(
@@ -129,6 +132,19 @@ export default function Table({
 									<IconEdit size={16} />
 									<T id="action.edit" />
 								</a>
+								{onViewResources ? (
+									<a
+										className="dropdown-item"
+										href="#"
+										onClick={(e) => {
+											e.preventDefault();
+											onViewResources?.(info.row.original.id);
+										}}
+									>
+										<IconUser size={16} />
+										<T id="action.view-resources" />
+									</a>
+								) : null}
 								{currentUserId !== info.row.original.id ? (
 									<>
 										<a
@@ -214,6 +230,7 @@ export default function Table({
 			onEditPermissions,
 			onSetPassword,
 			onLoginAs,
+			onViewResources,
 		],
 	);
 

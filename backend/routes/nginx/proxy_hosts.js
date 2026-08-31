@@ -39,14 +39,23 @@ router
 						query: {
 							$ref: "common#/properties/query",
 						},
+						owner_user_id: {
+							$ref: "common#/properties/owner_user_id",
+						},
 					},
 				},
 				{
 					expand: typeof req.query.expand === "string" ? req.query.expand.split(",") : null,
 					query: typeof req.query.query === "string" ? req.query.query : null,
+					owner_user_id: typeof req.query.owner_user_id === "string" ? req.query.owner_user_id : null,
 				},
 			);
-			const rows = await internalProxyHost.getAll(res.locals.access, data.expand, data.query);
+			const rows = await internalProxyHost.getAll(
+				res.locals.access,
+				data.expand,
+				data.query,
+				data.owner_user_id,
+			);
 			res.status(200).send(rows);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
@@ -66,6 +75,34 @@ router
 			res.status(201).send(result);
 		} catch (err) {
 			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err} ${JSON.stringify(err.debug, null, 2)}`);
+			next(err);
+		}
+	});
+
+/**
+ * Bulk operations on proxy-hosts
+ *
+ * /api/nginx/proxy-hosts/bulk
+ */
+router
+	.route("/bulk")
+	.options((_, res) => {
+		res.sendStatus(204);
+	})
+	.all(jwtdecode())
+
+	/**
+	 * POST /api/nginx/proxy-hosts/bulk
+	 *
+	 * Perform a bulk action on multiple proxy-hosts
+	 */
+	.post(async (req, res, next) => {
+		try {
+			const payload = await apiValidator(getValidationSchema("/nginx/proxy-hosts/bulk", "post"), req.body);
+			const result = await internalProxyHost.bulk(res.locals.access, payload);
+			res.status(200).send(result);
+		} catch (err) {
+			debug(logger, `${req.method.toUpperCase()} ${req.path}: ${err}`);
 			next(err);
 		}
 	});

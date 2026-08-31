@@ -1,0 +1,25 @@
+{
+	"description": "Bulk operation results",
+	"type": "array",
+	"items": {
+		"type": "object",
+		"required": ["id", "result"],
+		"additionalProperties": false,
+		"properties": {
+			"id": {
+				"type": "integer",
+				"example": 1
+			},
+			"result": {
+				"description": "True if the action succeeded for this item",
+				"type": "boolean",
+				"example": true
+			},
+			"error": {
+				"description": "Error message if the action failed for this item",
+				"type": "string",
+				"example": "Host is already disabled"
+			}
+		}
+	}
+}

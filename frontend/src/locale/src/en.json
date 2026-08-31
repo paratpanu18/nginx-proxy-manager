@@ -134,11 +134,38 @@
 	"action.view-details": {
 		"defaultMessage": "View Details"
 	},
+	"action.view-resources": {
+		"defaultMessage": "View resources"
+	},
 	"auditlogs": {
 		"defaultMessage": "Audit Logs"
 	},
 	"auto": {
 		"defaultMessage": "Auto"
+	},
+	"bulk.clear": {
+		"defaultMessage": "Clear"
+	},
+	"bulk.delete": {
+		"defaultMessage": "Delete selected"
+	},
+	"bulk.delete-confirm": {
+		"defaultMessage": "Are you sure you want to delete the {count} selected {object}? This cannot be undone."
+	},
+	"bulk.disable": {
+		"defaultMessage": "Disable selected"
+	},
+	"bulk.enable": {
+		"defaultMessage": "Enable selected"
+	},
+	"bulk.partial": {
+		"defaultMessage": "{failed} of {total} items failed: {error}"
+	},
+	"bulk.selected": {
+		"defaultMessage": "{count} selected"
+	},
+	"bulk.success": {
+		"defaultMessage": "Bulk action completed for {total} items"
 	},
 	"cancel": {
 		"defaultMessage": "Cancel"
@@ -761,6 +788,12 @@
 	"user.nickname": {
 		"defaultMessage": "Nickname"
 	},
+	"user.resources": {
+		"defaultMessage": "User Resources"
+	},
+	"user.resources.subtitle": {
+		"defaultMessage": "All resources created by {name}"
+	},
 	"user.set-password": {
 		"defaultMessage": "Set Password"
 	},
@@ -781,5 +814,11 @@
 	},
 	"users": {
 		"defaultMessage": "Users"
+	},
+	"view.all-objects": {
+		"defaultMessage": "All {object}"
+	},
+	"view.mine-objects": {
+		"defaultMessage": "My {object}"
 	}
 }
