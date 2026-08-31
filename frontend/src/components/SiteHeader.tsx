@@ -29,14 +29,13 @@ export function SiteHeader() {
 					<NavLink to="/">
 						<div className={styles.logo}>
 							<img
-								src="/images/logo-no-text.svg"
+								src="/images/logo-text-horizontal-grey.png"
 								width={40}
 								height={40}
 								className="navbar-brand-image"
 								alt="Logo"
 							/>
 						</div>
-						Nginx Proxy Manager
 					</NavLink>
 				</div>
 				<div className="navbar-nav flex-row order-md-last">
